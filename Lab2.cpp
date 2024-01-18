@@ -1,4 +1,4 @@
-?#include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -109,7 +109,7 @@ int main() {
 
             for (i = 0; socketClient[i] != -1 && i < MAX_CLIENTS; i++);
             if (i < MAX_CLIENTS) {
-                printf("Новое соединение\n");
+                printf("ГЌГ®ГўГ®ГҐ Г±Г®ГҐГ¤ГЁГ­ГҐГ­ГЁГҐ\n");
                 socketClient[i] = socketTemp;
             }
             else {
@@ -124,10 +124,10 @@ int main() {
                 ssize_t bytes_received = recv(socketClient[i], buffer, sizeof(buffer), 0);
 
                 if (bytes_received > 0) {
-                    printf("Сообщение от клиента: %s\n", buffer);
+                    printf("Г‘Г®Г®ГЎГ№ГҐГ­ГЁГҐ Г®ГІ ГЄГ«ГЁГҐГ­ГІГ : %s\n", buffer);
                 }
                 else if (bytes_received == 0) {
-                    printf("Соединение разорвано\n");
+                    printf("Г‘Г®ГҐГ¤ГЁГ­ГҐГ­ГЁГҐ Г°Г Г§Г®Г°ГўГ Г­Г®\n");
                     close(socketClient[i]);
                     socketClient[i] = -1;
                 }
