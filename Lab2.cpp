@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -19,13 +19,13 @@ void sigHupHandler(int r)
 
 int main() {
     struct sockaddr_in server_addr;
-    int socketTemp, socketServ, socketClient[MAX_CLIENTS];
+    int socketTemp, master_socket, socketClient[MAX_CLIENTS];
     int i;
     for (i = 0; i < MAX_CLIENTS; i++) {
         socketClient[i] = -1;
     }
 
-    socketServ = socket(AF_INET, SOCK_STREAM, 0);
+    master_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (socket == 0) {
         perror("error_in_socket");
         exit(EXIT_FAILURE);
@@ -38,7 +38,7 @@ int main() {
 
     int err;
 
-    err = bind(socketServ, (struct sockaddr*)&server_addr, sizeof(server_addr)); 
+    err = bind(master_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)); 
     
 
     if (err == -1) {
@@ -46,7 +46,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    err = listen(socketServ, MAX_CLIENTS);  
+    err = listen(master_socket, MAX_CLIENTS);  
     if (err == -1) {
         perror("error_in_listen");
         exit(EXIT_FAILURE);
@@ -71,23 +71,23 @@ int main() {
 
     while (1) { 
         FD_ZERO(&fds);
-        FD_SET(socketServ, &fds);
+        FD_SET(master_socket, &fds);
 
         
 
 
 
-        int max_fd = socketServ;
+        int max_descr = master_socket;
         for (i = 0; i < MAX_CLIENTS; i++) {
             if (socketClient[i] != -1) {
                 FD_SET(socketClient[i], &fds); 
-                if (socketClient[i] > max_fd) {
-                    max_fd = socketClient[i];
+                if (socketClient[i] > max_descr) {
+                    max_descr = socketClient[i];
                 }
             }
         }
 
-        err = pselect(max_fd + 1, &fds, NULL, NULL, NULL, &origMask); 
+        err = pselect(max_descr + 1, &fds, NULL, NULL, NULL, &origMask); 
         
         if (err < 0) {
             if (errno == EINTR) {
@@ -100,8 +100,8 @@ int main() {
             }
         }
 
-        if (FD_ISSET(socketServ, &fds)) {
-            if ((socketTemp = accept(socketServ, NULL, NULL)) < 0) {
+        if (FD_ISSET(master_socket, &fds)) {
+            if ((socketTemp = accept(master_socket, NULL, NULL)) < 0) {
                 perror("error_accept");
                 exit(EXIT_FAILURE);
             }
@@ -109,7 +109,7 @@ int main() {
 
             for (i = 0; socketClient[i] != -1 && i < MAX_CLIENTS; i++);
             if (i < MAX_CLIENTS) {
-                printf("Íîâîå ñîåäèíåíèå\n");
+                printf("Новое соединение\n");
                 socketClient[i] = socketTemp;
             }
             else {
@@ -124,10 +124,10 @@ int main() {
                 ssize_t bytes_received = recv(socketClient[i], buffer, sizeof(buffer), 0);
 
                 if (bytes_received > 0) {
-                    printf("Ñîîáùåíèå îò êëèåíòà: %s\n", buffer);
+                    printf("Сообщение от клиента: %s\n", buffer);
                 }
                 else if (bytes_received == 0) {
-                    printf("Ñîåäèíåíèå ðàçîðâàíî\n");
+                    printf("Соединение разорвано\n");
                     close(socketClient[i]);
                     socketClient[i] = -1;
                 }
@@ -138,7 +138,7 @@ int main() {
         }
     }
 
-    close(socketServ);
+    close(master_socket);
     for (i = 0; i < MAX_CLIENTS; i++) {
         close(socketClient[i]);
     }
